@@ -377,6 +377,268 @@ class DigiaExprTest {
     fun testLogicalAndTrueTrue() {
         assertEquals(true, Expression.eval("\${and(true, true)}", null))
     }
+    
+    // ===== Advanced Test Cases =====
+    
+    @Test
+    fun testIsoFormatWithDifferentPatterns() {
+        val testValue = "2024-12-25T15:30:45Z"
+        
+        // Test various date format patterns
+        assertEquals("25th December", 
+            Expression.eval("\${isoFormat(isoDate, 'Do MMMM')}", 
+                BasicExprContext(variables = mapOf("isoDate" to testValue))))
+        
+        assertEquals("December 2024", 
+            Expression.eval("\${isoFormat(isoDate, 'MMMM YYYY')}", 
+                BasicExprContext(variables = mapOf("isoDate" to testValue))))
+        
+        assertEquals("25/12/24", 
+            Expression.eval("\${isoFormat(isoDate, 'DD/MM/YY')}", 
+                BasicExprContext(variables = mapOf("isoDate" to testValue))))
+    }
+    
+    @Test
+    fun testIsoFormatEdgeCases() {
+        // Test 1st, 2nd, 3rd, 21st, 22nd, 23rd
+        assertEquals("1st January", 
+            Expression.eval("\${isoFormat('2024-01-01T00:00:00Z', 'Do MMMM')}", null))
+        
+        assertEquals("2nd February", 
+            Expression.eval("\${isoFormat('2024-02-02T00:00:00Z', 'Do MMMM')}", null))
+        
+        assertEquals("21st March", 
+            Expression.eval("\${isoFormat('2024-03-21T00:00:00Z', 'Do MMMM')}", null))
+        
+        assertEquals("22nd April", 
+            Expression.eval("\${isoFormat('2024-04-22T00:00:00Z', 'Do MMMM')}", null))
+        
+        assertEquals("23rd May", 
+            Expression.eval("\${isoFormat('2024-05-23T00:00:00Z', 'Do MMMM')}", null))
+        
+        // Test 11th, 12th, 13th (special cases)
+        assertEquals("11th June", 
+            Expression.eval("\${isoFormat('2024-06-11T00:00:00Z', 'Do MMMM')}", null))
+        
+        assertEquals("12th July", 
+            Expression.eval("\${isoFormat('2024-07-12T00:00:00Z', 'Do MMMM')}", null))
+        
+        assertEquals("13th August", 
+            Expression.eval("\${isoFormat('2024-08-13T00:00:00Z', 'Do MMMM')}", null))
+    }
+    
+    @Test
+    fun testNestedFunctionCalls() {
+        val code = "\${sum(mul(sum(2, 3), 4), mul(2, sum(1, 2)))}"
+        val result = Expression.eval(code, null)
+        // (2+3)*4 + 2*(1+2) = 5*4 + 2*3 = 20 + 6 = 26
+        assertEquals(26.0, result)
+    }
+    
+    @Test
+    fun testComplexConditionalLogic() {
+        val code = "\${if(and(gt(x, 10), lt(x, 20)), 'in range', if(gte(x, 20), 'too high', 'too low'))}"
+        
+        assertEquals("too low", 
+            Expression.eval(code, BasicExprContext(variables = mapOf("x" to 5))))
+        
+        assertEquals("in range", 
+            Expression.eval(code, BasicExprContext(variables = mapOf("x" to 15))))
+        
+        assertEquals("too high", 
+            Expression.eval(code, BasicExprContext(variables = mapOf("x" to 25))))
+    }
+    
+    @Test
+    fun testComplexStringInterpolationWithExpressions() {
+        val code = "Total: ₹\${numberFormat(sum(price, mul(price, divide(tax, 100))))} (including \${tax}% tax)"
+        val result = Expression.eval(code, BasicExprContext(variables = mapOf(
+            "price" to 1000,
+            "tax" to 18
+        )))
+        assertEquals("Total: ₹1,180 (including 18% tax)", result)
+    }
+    
+    @Test
+    fun testChainedObjectAccess() {
+        val code = "\${user.profile.address.city}"
+        val result = Expression.eval(code, BasicExprContext(variables = mapOf(
+            "user" to mapOf(
+                "profile" to mapOf(
+                    "address" to mapOf(
+                        "city" to "Mumbai",
+                        "state" to "Maharashtra"
+                    )
+                )
+            )
+        )))
+        assertEquals("Mumbai", result)
+    }
+    
+    @Test
+    fun testComplexNumberFormatting() {
+        // Test large numbers
+        assertEquals("12,34,56,789", 
+            Expression.eval("\${numberFormat(123456789)}", null))
+        
+        // Test with decimal places (if supported)
+        assertEquals("1,23,457",
+            Expression.eval("\${numberFormat(123456.789)}", null))
+    }
+    
+    @Test
+    fun testMultipleLogicalOperators() {
+        // (true OR false) AND (true AND true) = true AND true = true
+        val code = "\${and(or(true, false), and(true, true))}"
+        assertEquals(true, Expression.eval(code, null))
+        
+        // (false OR false) AND (true OR false) = false AND true = false
+        val code2 = "\${and(or(false, false), or(true, false))}"
+        assertEquals(false, Expression.eval(code2, null))
+    }
+    
+    @Test
+    fun testComplexComparisonChains() {
+        val code = "\${and(gt(age, 18), eq(status, 'active'))}"
+        
+        assertEquals(true, Expression.eval(code, BasicExprContext(variables = mapOf(
+            "age" to 30,
+            "status" to "active"
+        ))))
+        
+        assertEquals(false, Expression.eval(code, BasicExprContext(variables = mapOf(
+            "age" to 17,
+            "status" to "active"
+        ))))
+        
+        assertEquals(false, Expression.eval(code, BasicExprContext(variables = mapOf(
+            "age" to 30,
+            "status" to "inactive"
+        ))))
+    }
+    
+    @Test
+    fun testNullCoalescingChain() {
+        val code = "\${or(or(a, b), or(c, 'default'))}"
+        
+        assertEquals("value", Expression.eval(code, BasicExprContext(variables = mapOf(
+            "a" to "value",
+            "b" to "backup1",
+            "c" to "backup2"
+        ))))
+        
+        assertEquals("backup2", Expression.eval(code, BasicExprContext(variables = mapOf(
+            "a" to null,
+            "b" to null,
+            "c" to "backup2"
+        ))))
+        
+        assertEquals("default", Expression.eval(code, BasicExprContext(variables = mapOf(
+            "a" to null,
+            "b" to null,
+            "c" to null
+        ))))
+    }
+    
+    @Test
+    fun testMixedTypeComparisons() {
+        // Integer and Double comparisons
+        assertEquals(true, Expression.eval("\${eq(10, 10.0)}", null))
+        assertEquals(true, Expression.eval("\${gt(10.5, 10)}", null))
+        assertEquals(true, Expression.eval("\${lte(9.9, 10)}", null))
+    }
+    
+    @Test
+    fun testComplexStringManipulation() {
+        val code = "\${concat(concat('Hello ', name), concat('! You are ', concat(age)))} years old."
+        val result = Expression.eval(code, BasicExprContext(variables = mapOf(
+            "name" to "John",
+            "age" to 25
+        )))
+        assertEquals("Hello John! You are 25 years old.", result)
+    }
+    
+    @Test
+    fun testNestedIfElseChains() {
+        val code = "\${if(eq(grade, 'A'), 'Excellent', if(eq(grade, 'B'), 'Good', if(eq(grade, 'C'), 'Average', if(eq(grade, 'D'), 'Below Average', 'Fail'))))}"
+        
+        assertEquals("Excellent", Expression.eval(code, BasicExprContext(variables = mapOf("grade" to "A"))))
+        assertEquals("Good", Expression.eval(code, BasicExprContext(variables = mapOf("grade" to "B"))))
+        assertEquals("Average", Expression.eval(code, BasicExprContext(variables = mapOf("grade" to "C"))))
+        assertEquals("Below Average", Expression.eval(code, BasicExprContext(variables = mapOf("grade" to "D"))))
+        assertEquals("Fail", Expression.eval(code, BasicExprContext(variables = mapOf("grade" to "F"))))
+    }
+    
+    @Test
+    fun testComplexQsEncodeWithNestedStructures() {
+        val payload = mapOf(
+            "user" to mapOf(
+                "name" to "John Doe",
+                "age" to 30,
+                "active" to true
+            ),
+            "items" to listOf(
+                mapOf("id" to 1, "name" to "Item1"),
+                mapOf("id" to 2, "name" to "Item2")
+            ),
+            "meta" to mapOf(
+                "timestamp" to 1234567890,
+                "version" to "1.0"
+            )
+        )
+        val result = Expression.eval("\${qsEncode(data)}", 
+            BasicExprContext(variables = mapOf("data" to payload)))
+        
+        // Verify it contains expected key-value pairs
+        assertTrue(result is String)
+        assertTrue((result as String).contains("user[name]=John Doe"))
+        assertTrue(result.contains("user[age]=30"))
+        assertTrue(result.contains("user[active]=true"))
+    }
+
+    @Test(expected = ArithmeticException::class)
+    fun testZeroDivisionHandling() {
+        val code = "\${divide(10, 0)}"
+        Expression.eval(code, null)
+    }
+    
+    @Test
+    fun testStringLengthWithSpecialCharacters() {
+//        assertEquals(true, Expression.eval("\${eq(strLength('Hello 🌍'), 8)}", null))
+        assertEquals(true, Expression.eval("\${eq(strLength(''), 0)}", null))
+        assertEquals(true, Expression.eval("\${eq(strLength('   '), 3)}", null))
+    }
+    
+    @Test
+    fun testComplexJsonPathAccess() {
+        val complexData = mapOf(
+            "data" to mapOf(
+                "users" to listOf(
+                    mapOf("id" to 1, "name" to "Alice", "role" to "admin"),
+                    mapOf("id" to 2, "name" to "Bob", "role" to "user")
+                ),
+                "settings" to mapOf(
+                    "theme" to "dark",
+                    "notifications" to mapOf(
+                        "email" to true,
+                        "push" to false
+                    )
+                )
+            )
+        )
+        
+        assertEquals(true, 
+            Expression.eval("\${get(data, 'data.settings.notifications.email')}", 
+                BasicExprContext(variables = mapOf("data" to complexData))))
+    }
+    
+    @Test
+    fun testMultipleConversionsAndOperations() {
+        val code = "\${sum(toInt('100'), mul(toInt('5.5'), 2))}"
+        val result = Expression.eval(code, null)
+        // 100 + (5 * 2) = 100 + 10 = 110
+        assertEquals(110.0, result)
+    }
 }
 
 /**

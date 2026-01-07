@@ -121,6 +121,8 @@ class Scanner(private val source: String) {
             }
         }
         
+        if (rightQuotePos == leftQuotePos) rightQuotePos = currIdx
+        
         // Skip the Closing Quote
         advance()
         addToken(TokenType.STRING, source.substring(leftQuotePos + 1, rightQuotePos))

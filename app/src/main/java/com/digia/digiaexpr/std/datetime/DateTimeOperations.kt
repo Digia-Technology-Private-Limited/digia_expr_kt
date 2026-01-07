@@ -39,18 +39,19 @@ class IsoFormatOp : ExprCallable {
             return null
         }
 
-        val zoned = instant.atZone(ZoneId.systemDefault())
+        val utcDateTime = instant.atZone(ZoneId.of("UTC"))
 
         val hasOrdinal = momentFormat.contains("Do")
 
         val javaFormat = momentToJavaFormat(momentFormat)
-        var result = DateTimeFormatter.ofPattern(javaFormat).format(zoned)
+        var result = DateTimeFormatter.ofPattern(javaFormat).format(utcDateTime)
 
         if (hasOrdinal) {
-            val day = zoned.dayOfMonth
+            val day = utcDateTime.dayOfMonth
             result = result.replace(
-                "{ORDINAL}",
-                ordinal(day)
+                "__ORDINAL__",
+                ordinal(day),
+                ignoreCase = true
             )
         }
 
