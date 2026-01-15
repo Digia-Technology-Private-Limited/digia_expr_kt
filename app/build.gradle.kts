@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.digia"
-version = "1.0.0-beta.1"
+version = "1.0.0-beta.2"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -46,7 +46,7 @@ publishing {
             from(components["java"])
             groupId = "com.digia"
             artifactId = "digiaExpr"
-            version = "1.0.0-beta.1"
+            version = "1.0.0-beta.2"
             
             pom {
                 name.set("Digia Expression Evaluator")
