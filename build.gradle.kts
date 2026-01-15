@@ -1,8 +1,7 @@
 plugins {
-    kotlin("jvm")
-    id("maven-publish") // <--- Add this
+    kotlin("jvm") version "2.0.0" 
+    id("maven-publish")
 }
-
 publishing {
     publications {
         create<MavenPublication>("maven") {
