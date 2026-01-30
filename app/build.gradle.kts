@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.digia"
-version = "1.0.0"
+version = "1.0.0-beta.2"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -44,13 +44,13 @@ publishing {
         create<MavenPublication>("maven") {
             from(components["java"])
             groupId = "com.digia"
-            artifactId = "digiaexpr"
-            version = "1.0.0"
+            artifactId = "digiaExpr"
+            version = "1.0.0-beta.2"
             
             pom {
                 name.set("Digia Expression Evaluator")
                 description.set("A pure Kotlin expression evaluation library")
-                url.set("https://github.com/Digia-Technology-Private-Limited/digia_expr_android")
+                url.set("https://github.com/Digia-Technology-Private-Limited/digia_expr_kt")
             }
         }
     }
