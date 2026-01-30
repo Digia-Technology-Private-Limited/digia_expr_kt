@@ -9,7 +9,7 @@ import com.digia.digiaexpr.std.logical.LogicalOperations
 import com.digia.digiaexpr.std.math.MathOperations
 import com.digia.digiaexpr.std.string.StringOperations
 import com.digia.digiaexpr.std.util.toValue
-import com.ibm.icu.text.DecimalFormat;
+import java.text.DecimalFormat
 
 
 object StdLibFunctions {
@@ -78,17 +78,76 @@ class LengthOp : ExprCallable {
 class NumberFormatOp : ExprCallable {
     override fun arity(): Int = 2
 
-
     override fun call(evaluator: ASTEvaluator, arguments: List<Any>): Any? {
         if (arguments.size > arity()) {
             return "Incorrect argument size"
         }
 
-        val number = toValue<Number>(evaluator, arguments[0])
+        val number = toValue<Number>(evaluator, arguments[0]) ?: return null
         val arg1 = if (arguments.size > 1) arguments[1] else null
         val format = arg1?.let { toValue<String>(evaluator, it) } ?: "#,##,###"
 
-        return DecimalFormat(format).format(number)
+        return formatIndianNumber(number, format)
+    }
+
+    private fun formatIndianNumber(number: Number, pattern: String): String {
+        // Check if pattern is Indian format (e.g., #,##,###, ##,##,###, etc.)
+        val isIndianFormat = pattern.matches(Regex("#+,##,###.*"))
+        
+        if (!isIndianFormat) {
+            // Use standard DecimalFormat for non-Indian patterns
+            return DecimalFormat(pattern).format(number)
+        }
+        
+        // Handle integer and decimal parts
+        val value = number.toDouble()
+        val absValue = kotlin.math.abs(value)
+        val negative = value < 0
+        
+        // Check if pattern has decimal places
+        val hasDecimalInPattern = pattern.contains(".")
+        
+        // Split into integer and decimal parts - round if pattern has no decimals
+        val integerPart = if (hasDecimalInPattern) {
+            absValue.toLong()
+        } else {
+            kotlin.math.round(absValue).toLong()
+        }
+        val hasDecimal = absValue != integerPart.toDouble()
+        
+        // Format integer part with Indian grouping
+        val integerStr = integerPart.toString()
+        
+        val formatted = if (integerStr.length <= 3) {
+            integerStr
+        } else {
+            val lastThree = integerStr.takeLast(3)
+            val remaining = integerStr.dropLast(3)
+            val groups = mutableListOf<String>()
+            
+            var temp = remaining
+            while (temp.length > 2) {
+                groups.add(0, temp.takeLast(2))
+                temp = temp.dropLast(2)
+            }
+            if (temp.isNotEmpty()) {
+                groups.add(0, temp)
+            }
+            
+            groups.joinToString(",") + "," + lastThree
+        }
+        
+        val result = if (negative) "-$formatted" else formatted
+        
+        // Add decimal part if present in the pattern and number has decimal
+        return if (hasDecimal && hasDecimalInPattern) {
+            val decimalFormat = DecimalFormat(pattern)
+            val fullFormatted = decimalFormat.format(number)
+            val decimalPart = fullFormatted.substringAfter(".", "")
+            if (decimalPart.isNotEmpty()) "$result.$decimalPart" else result
+        } else {
+            result
+        }
     }
 
     override val name: String

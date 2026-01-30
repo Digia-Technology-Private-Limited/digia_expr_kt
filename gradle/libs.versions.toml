@@ -1,11 +1,9 @@
 [versions]
 kotlin = "2.0.21"
 junit = "4.13.2"
-icu4j = "78.1"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
-com-ibm-icu-icu4j = { group = "com.ibm.icu", name = "icu4j", version.ref = "icu4j" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

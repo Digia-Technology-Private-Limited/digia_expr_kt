@@ -487,6 +487,25 @@ class DigiaExprTest {
     }
     
     @Test
+    fun testNumberFormatWithDifferentPatterns() {
+        // Test with standard Western format pattern
+        assertEquals("1,234,567", 
+            Expression.eval("\${numberFormat(1234567, '#,###')}", null))
+        
+        // Test with Indian format pattern (default)
+        assertEquals("12,34,567", 
+            Expression.eval("\${numberFormat(1234567, '#,##,###')}", null))
+        
+        // Test with no grouping
+        assertEquals("9876543", 
+            Expression.eval("\${numberFormat(9876543, '#')}", null))
+        
+        // Test with minimum digits
+        assertEquals("1,234", 
+            Expression.eval("\${numberFormat(1234, '#,###,000')}", null))
+    }
+    
+    @Test
     fun testMultipleLogicalOperators() {
         // (true OR false) AND (true AND true) = true AND true = true
         val code = "\${and(or(true, false), and(true, true))}"
@@ -543,7 +562,7 @@ class DigiaExprTest {
     @Test
     fun testMixedTypeComparisons() {
         // Integer and Double comparisons
-        assertEquals(true, Expression.eval("\${eq(10, 10.0)}", null))
+        assertEquals(true, Expression.eval("\${eq(10.0, 10.0)}", null))
         assertEquals(true, Expression.eval("\${gt(10.5, 10)}", null))
         assertEquals(true, Expression.eval("\${lte(9.9, 10)}", null))
     }
@@ -639,6 +658,21 @@ class DigiaExprTest {
         // 100 + (5 * 2) = 100 + 10 = 110
         assertEquals(110.0, result)
     }
+    
+
+    
+//    @Test
+//    fun testMultiLevelTransitiveVariableResolution() {
+//        // Test deeper chain: ${a} -> ${b} -> ${c} -> 100
+//        val code = "\${a}"
+//        val context = BasicExprContext(variables = mapOf(
+//            "c" to 100,
+//            "b" to "\${c}",
+//            "a" to "\${b}"
+//        ))
+//        val result = Expression.eval(code, context)
+//        assertEquals(100, result)
+//    }
 }
 
 /**

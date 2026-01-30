@@ -23,7 +23,6 @@ dependencies {
     // JSON processing
     implementation("com.jayway.jsonpath:json-path:2.9.0")
     implementation("com.google.code.gson:gson:2.10.1")
-    implementation(libs.com.ibm.icu.icu4j) // ICU4J for advanced number formatting
     
     // Testing
     testImplementation(libs.junit)

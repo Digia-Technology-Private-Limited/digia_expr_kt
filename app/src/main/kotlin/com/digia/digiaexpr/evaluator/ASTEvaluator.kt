@@ -1,6 +1,7 @@
 package com.digia.digiaexpr.evaluator
 
 
+import com.digia.digiaexpr.Expression
 import com.digia.digiaexpr.ast.*
 import com.digia.digiaexpr.callable.ExprCallable
 import com.digia.digiaexpr.callable.ExprInstance
@@ -67,11 +68,19 @@ class ASTEvaluator(context: ExprContext? = null) {
                 
                 if (record.second == null) return null
                 
-                if (record.second is ASTNode) {
+                val value = if (record.second is ASTNode) {
                     eval(record.second as ASTNode)
                 } else {
                     record.second
                 }
+                
+                // Handle transitive variable resolution: if the value is a string 
+                // containing ${...}, re-evaluate it
+//                if (value is String && Expression.hasExpression(value)) {
+//                    return Expression.eval(value, _context)
+//                }
+//
+                value
             }
             
             is ASTGetExpr -> {
